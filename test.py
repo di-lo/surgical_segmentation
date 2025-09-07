@@ -102,14 +102,6 @@ def validate_baseline(args, net, loader, save_results_dir=None):
                 target = batch['label'].to(args.device, dtype=torch.long)  # shape: [N, H, W]
                 if args.net == 'cats2d':
                     output, _, _ = net(input)
-                elif args.net == 'deeplab':
-                    if args.deeplab_ident == 'resnet50':
-                        # ResNet50
-                        output = net.model(input)['out']
-                    if args.deeplab_ident == 'mobilenet':
-                        # MobileNetv2
-                        output = net.model(input)
-                        output = F.interpolate(output, size=target.shape[-2:], mode='bilinear', align_corners=False)
                 elif args.net == 'mask2former':
                     outputs = net(pixel_values=input)
                     class_probs = outputs.class_queries_logits.softmax(dim=-1)[..., :-1]
@@ -146,15 +138,11 @@ def validate_baseline(args, net, loader, save_results_dir=None):
 
                 # Compute Dice score
                 mean_dice, std_dice, dice_per_class = dice_coeff(output_pred, target, num_classes=5)
-                # dice_records.append(mean_dice)
-                # per_image_dice.append((batch["name"][0], [d.item() for d in dice_per_class]))
                 dice_records.append(mean_dice)
 
                 # keep dice for CSV
                 img_name = os.path.basename(batch["name"][0])
                 class_vals = [float(d) if not torch.isnan(d) else np.nan for d in dice_per_class]
-                # import math
-                # class_vals = [float(d) if not math.isnan(float(d)) else np.nan for d in dice_per_class]
 
                 csv_rows.append([img_name] + class_vals)
 
@@ -196,21 +184,10 @@ def test_net_baseline(args, net1, dataset, batch_size=1):
     # Load best model
     net1.load_state_dict(torch.load(best_model_path, map_location=device))
 
-    # checkpoint = torch.load(last_model_path, map_location=device)
-    # net1.load_state_dict(checkpoint['model_state_dict'])
     dice_records, per_image_dice = validate_baseline(
         args, net1, test_loader, save_results_dir=os.path.join(args.save_dir, "results_best")
     )
 
-    # Load last modelbest_model_path
-    # checkpoint = torch.load(last_model_path, map_location=device)
-    # net1.load_state_dict(checkpoint["model_state_dict"])
-    #
-    # dice_best = validate_baseline(args, net1, test_loader,
-    #                               save_results_dir=os.path.join(args.save_dir, "results_last"))
-
-
-    # dice_list1 = validate_baseline(args, net1, test_loader, save_results_dir=args.test_data_dir.replace('/image/', f'/seg_{args.name}/'))
     logging.info('Model, batch-wise validation Dice coeff: {:.4f}, std: {:.4f}'.format(
         np.mean(dice_records), np.std(dice_records)))
 
@@ -222,14 +199,6 @@ def test_net_baseline(args, net1, dataset, batch_size=1):
     worst_name, worst_vec = per_image_dice[worst_idx]
 
     CLS_IDS = [1, 2, 3, 4]
-
-    # print("\nBest-overall image:", best_name)
-    # for cls, score in zip(CLS_IDS, best_vec):
-    #     print(f"  Class {cls}: {score:.4f}")
-    #
-    # print("\nWorst-overall image:", worst_name)
-    # for cls, score in zip(CLS_IDS, worst_vec):
-    #     print(f"  Class {cls}: {score:.4f}")
 
     per_class_scores = {cls: [] for cls in CLS_IDS}
     for _, dice_vec in per_image_dice:
@@ -252,8 +221,6 @@ def test_net_baseline(args, net1, dataset, batch_size=1):
     output_root = "/home/dilara/Desktop/CAO_seg-main/src/result_dice_images"
     os.makedirs(output_root, exist_ok=True)
 
-    # best_png = os.path.basename(best_name).replace(".png", "_vis.png")
-    # worst_png = os.path.basename(worst_name).replace(".png", "_vis.png")
     def build_vis_fname(img_path):
         seq = os.path.basename(os.path.dirname(img_path))
         stem = os.path.splitext(os.path.basename(img_path))[0]

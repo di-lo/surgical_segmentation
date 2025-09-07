@@ -49,25 +49,6 @@ def get_net(args, pretrain=False, model=None, net=None):
         else:
             net = CATS2d(device=device)
 
-    elif net == 'deeplab':
-
-        if args.deeplab_ident == 'mobilenet':
-            from qai_hub_models.models.deeplabv3_plus_mobilenet import Model as QualcommDeepLab
-            model = QualcommDeepLab.from_pretrained()
-            in_ch = model.model.decoder.last_conv[8].in_channels
-            model.model.decoder.last_conv[8] = nn.Conv2d(in_ch, args.out_channels, kernel_size=1)
-
-        if args.deeplab_ident == 'resnet50':
-            from qai_hub_models.models.deeplabv3_resnet50 import Model as QualcommDeepLab
-            model = QualcommDeepLab.from_pretrained()
-            in_ch = model.model.classifier[4].in_channels
-            model.model.classifier[4] = nn.Conv2d(in_ch, args.out_channels, kernel_size=1)
-
-            in_ch2 = model.model.aux_classifier[4].in_channels
-            model.model.aux_classifier[4] = nn.Conv2d(in_ch2, args.out_channels, kernel_size=1)
-
-        net = model.to(device)
-
     elif net == 'segformer':
 
         if args.weights:

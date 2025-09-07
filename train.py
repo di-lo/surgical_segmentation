@@ -85,10 +85,6 @@ def validate_sup(net, loader, device):
                         mode='bilinear',
                         align_corners=False
                     )
-                elif args.net == 'deeplab':
-                    # output = net.model(input)['out']
-                    output = net.model(input)
-                    output = F.interpolate(output, size=target.shape[-2:], mode='bilinear', align_corners=False)
 
                 elif args.net == 'mask2former':
                     outputs = net(pixel_values=input)

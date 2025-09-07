@@ -71,9 +71,8 @@ class CAO_dataset(Dataset):
             h, w = image.shape[:2]
             # mask = np.zeros((h, w), dtype=np.uint8)
 
-        if self.args.cropped:
-            image = image[:, 420:-420, :]
-            mask = mask[:, 420:-420]
+        image = image[:, 420:-420, :]
+        mask = mask[:, 420:-420]
 
         # with Albumentations
         if self.transform is not None:
